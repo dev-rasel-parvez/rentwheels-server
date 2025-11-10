@@ -87,6 +87,63 @@ async function run() {
         })
 
 
+        // Update car 
+        app.patch('/cars/:id', verifyFireBaseToken, async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+
+            try {
+                const filter = { _id: new ObjectId(id) };
+
+                if (!updateData || Object.keys(updateData).length === 0) {
+                    return res.status(400).send({ error: "No update data provided" });
+                }
+
+
+                if (Object.keys(updateData).length === 1 && updateData.status) {
+                    const updateDoc = { $set: { status: updateData.status } };
+                    const result = await carsCollection.updateOne(filter, updateDoc);
+
+                    if (result.modifiedCount === 0) {
+                        return res.status(404).send({ error: "Car not found or status unchanged" });
+                    }
+
+                    return res.send({ message: "Car status updated successfully" });
+                }
+
+                const allowedFields = [
+                    "carName",
+                    "category",
+                    "rentPricePerDay",
+                    "location",
+                    "imageUrl",
+                    "description",
+                    "status"
+                ];
+
+
+                const safeUpdate = {};
+                for (const key of allowedFields) {
+                    if (updateData[key] !== undefined) safeUpdate[key] = updateData[key];
+                }
+
+                const updateDoc = { $set: safeUpdate };
+
+                const result = await carsCollection.updateOne(filter, updateDoc);
+
+                if (result.modifiedCount === 0) {
+                    return res.status(404).send({ error: "Car not found or data unchanged" });
+                }
+
+                res.send({ message: "Car updated successfully" });
+            } catch (err) {
+                console.error("Error updating car:", err);
+                res.status(500).send({ error: "Failed to update car" });
+            }
+        });
+
+        
+
         await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
     }
