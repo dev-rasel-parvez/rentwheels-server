@@ -142,6 +142,37 @@ async function run() {
             }
         });
 
+        // Add a new car
+        app.post('/cars', verifyFireBaseToken, async (req, res) => {
+            try {
+                const newCar = req.body;
+
+                if (!newCar.carName || !newCar.category || !newCar.rentPricePerDay || !newCar.location || !newCar.imageUrl) {
+                    return res.status(400).send({ message: "Missing required fields" });
+                }
+
+                newCar.status = newCar.status || "available";
+
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, "0");
+                const dd = String(today.getDate()).padStart(2, "0");
+                newCar.addedDate = `${yyyy}-${mm}-${dd}`;
+
+                const result = await carsCollection.insertOne(newCar);
+                res.status(201).send({
+                    message: "Car added successfully",
+                    insertedId: result.insertedId
+                });
+            } catch (error) {
+                console.error("Error adding car:", error);
+                res.status(500).send({ message: "Failed to add car" });
+            }
+        });
+
+
+
+
         
 
         await client.db('admin').command({ ping: 1 })
