@@ -64,7 +64,12 @@ async function run() {
             res.send('wow my database connection work');
         })
 
-
+        // all cars API
+        app.get('/cars', async (req, res) => {
+            const cursor = carsCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
 
 
 
