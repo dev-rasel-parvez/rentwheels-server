@@ -71,7 +71,12 @@ async function run() {
             res.send(result);
         })
 
-
+        // all cars sorted by recent date 
+        app.get('/cars/recent', async (req, res) => {
+            const cursor = carsCollection.find().sort({ addedDate: -1 });
+            const result = await cursor.toArray();
+            res.send(result);
+        });
 
         await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
