@@ -171,9 +171,43 @@ async function run() {
         });
 
 
+        // POST /bookings → Book a car
+        app.post('/bookings', verifyFireBaseToken, async (req, res) => {
+            try {
+                const bookingData = req.body;
+
+                if (!bookingData.carId || !bookingData.userEmail) {
+                    return res.status(400).send({ message: "Car ID and user email are required" });
+                }
+
+                const RentWheels = client.db('RentWheels');
+                const carsCollection = RentWheels.collection('cars');
+                const bookingsCollection = RentWheels.collection('bookings');
+
+                const car = await carsCollection.findOne({ _id: new ObjectId(bookingData.carId) });
+                if (!car) return res.status(404).send({ message: "Car not found" });
+                if (car.status === "booked") {
+                    return res.status(400).send({ message: "Car is already booked" });
+                }
 
 
-        
+                await bookingsCollection.insertOne(bookingData);
+
+
+                await carsCollection.updateOne(
+                    { _id: new ObjectId(bookingData.carId) },
+                    { $set: { status: "booked" } }
+                );
+
+                res.send({ message: "Car booked successfully" });
+
+            } catch (error) {
+                console.error("Booking error:", error);
+                res.status(500).send({ message: "Failed to book car" });
+            }
+        });
+
+
 
         await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
