@@ -40,7 +40,7 @@ async function run() {
 
       // -----------------------//
       
-      // Check database connection
+      // Check mongodb database connection
       app.get('/', async (req, res) => {
             
             res.send('wow my database connection work');
