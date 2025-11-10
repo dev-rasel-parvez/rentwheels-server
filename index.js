@@ -19,6 +19,24 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
+const verifyFireBaseToken = async (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authorization.split(' ')[1];
+
+    try {
+        const decoded = await admin.auth().verifyIdToken(token);
+        console.log('inside token', decoded)
+        req.token_email = decoded.email;
+        next();
+    }
+    catch (error) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+}
+
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -36,32 +54,25 @@ async function run() {
         await client.connect()
 
         const RentWheels = client.db('RentWheels');
-        const usersCollection = RentWheels.collection('cars')
+        const carsCollection = RentWheels.collection('cars')
 
-      // -----------------------//
-      
-      // Check mongodb database connection
-      app.get('/', async (req, res) => {
-            
+        // -----------------------//
+
+        // Check mongodb database connection
+        app.get('/', async (req, res) => {
+
             res.send('wow my database connection work');
         })
-      
-      // cars data
-      app.get('/cars', async (req, res) => {
-            const cursor = usersCollection.find();
-            const result = await cursor.toArray();
-            res.send(result);
-        })
 
 
 
 
-        
+
         await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
     }
     finally {
-        
+
     }
 }
 run().catch(console.dir)
