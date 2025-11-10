@@ -78,6 +78,25 @@ async function run() {
             res.send(result);
         });
 
+
+        // search cars
+        app.get('/cars/search', async (req, res) => {
+            try {
+                const { query } = req.query;
+                if (!query || query.trim() === "") {
+                    return res.send([]);
+                }
+
+                const regex = new RegExp(query.trim(), "i"); 
+                const result = await carsCollection.find({ carName: { $regex: regex } }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Search error:", error);
+                res.status(500).send({ message: "Search failed" });
+            }
+        });
+
+
         // Specific car API
         app.get('/cars/:id', verifyFireBaseToken, async (req, res) => {
             const id = req.params.id;
@@ -306,6 +325,8 @@ async function run() {
                 res.status(500).send({ message: "Failed to delete car" });
             }
         });
+
+
 
 
 
