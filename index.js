@@ -208,6 +208,106 @@ async function run() {
         });
 
 
+        // GET /bookings → Fetch all bookings
+        app.get('/bookings', verifyFireBaseToken, async (req, res) => {
+            try {
+                const RentWheels = client.db('RentWheels');
+                const bookingsCollection = RentWheels.collection('bookings');
+
+                const bookings = await bookingsCollection.find().toArray();
+                res.send(bookings);
+            } catch (error) {
+                console.error("Error fetching bookings:", error);
+                res.status(500).send({ message: "Failed to fetch bookings" });
+            }
+        });
+
+        // Get bookings by logged-in user 
+        app.get('/my-bookings', verifyFireBaseToken, async (req, res) => {
+            try {
+                const { email } = req.query;
+                if (!email) {
+                    return res.status(400).send({ message: "User email is required" });
+                }
+
+                const bookingsCollection = client.db('RentWheels').collection('bookings');
+                const bookings = await bookingsCollection.find({ userEmail: email }).toArray();
+
+                res.send(bookings);
+            } catch (error) {
+                console.error("Error fetching user bookings:", error);
+                res.status(500).send({ message: "Failed to fetch bookings" });
+            }
+        });
+
+        // Cancel booking → update booking status 
+        app.delete('/bookings/:id', verifyFireBaseToken, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const RentWheels = client.db('RentWheels');
+                const bookingsCollection = RentWheels.collection('bookings');
+                const carsCollection = RentWheels.collection('cars');
+
+
+                const booking = await bookingsCollection.findOne({ _id: new ObjectId(id) });
+                if (!booking) return res.status(404).send({ message: "Booking not found" });
+
+
+                await bookingsCollection.deleteOne({ _id: new ObjectId(id) });
+
+
+                await carsCollection.updateOne(
+                    { _id: new ObjectId(booking.carId) },
+                    { $set: { status: "available" } }
+                );
+
+                res.send({ message: "Booking cancelled successfully" });
+            } catch (error) {
+                console.error("Cancel booking error:", error);
+                res.status(500).send({ message: "Failed to cancel booking" });
+            }
+        });
+
+        // Get all cars listed by a specific provider (My Listings)
+        app.get('/my-cars', verifyFireBaseToken, async (req, res) => {
+            try {
+                const { email } = req.query;
+                if (!email) {
+                    return res.status(400).send({ message: "Provider email is required" });
+                }
+
+                const RentWheels = client.db('RentWheels');
+                const carsCollection = RentWheels.collection('cars');
+
+                const cars = await carsCollection.find({ providerEmail: email }).toArray();
+
+                res.send(cars);
+            } catch (error) {
+                console.error("Error fetching provider cars:", error);
+                res.status(500).send({ message: "Failed to fetch listings" });
+            }
+        });
+
+        // Delete a car
+        app.delete('/cars/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const result = await client
+                    .db('RentWheels')
+                    .collection('cars')
+                    .deleteOne({ _id: new ObjectId(id) });
+
+                if (result.deletedCount === 0)
+                    return res.status(404).send({ message: "Car not found" });
+
+                res.send({ message: "Car deleted successfully" });
+            } catch (error) {
+                console.error("Delete error:", error);
+                res.status(500).send({ message: "Failed to delete car" });
+            }
+        });
+
+
 
         await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
