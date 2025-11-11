@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 const uri = process.env.MONGODB_URI;
 
 const admin = require("firebase-admin");
@@ -330,7 +330,7 @@ async function run() {
 
 
 
-        await client.db('admin').command({ ping: 1 })
+        // await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
     }
     finally {
