@@ -3,12 +3,14 @@ const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
-const port = process.env.PORT || 3000;
+const port =  process.env.PORT || 3000;
 const uri = process.env.MONGODB_URI;
 
 const admin = require("firebase-admin");
 
-const serviceAccount = require("./rentwheels-client-rasel-firebase-adminsdk.json");
+// index.js
+const decoded = Buffer.from(process.env.FIREBASE_KEY,'base64').toString("utf-8");
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -28,7 +30,7 @@ const verifyFireBaseToken = async (req, res, next) => {
 
     try {
         const decoded = await admin.auth().verifyIdToken(token);
-        console.log('inside token', decoded)
+        
         req.token_email = decoded.email;
         next();
     }
@@ -51,19 +53,11 @@ app.get('/', (req, res) => {
 
 async function run() {
     try {
-        // await client.connect()
-
+        
         const RentWheels = client.db('RentWheels');
         const carsCollection = RentWheels.collection('cars')
 
-        // -----------------------//
-
-        // Check mongodb database connection
-        app.get('/', async (req, res) => {
-
-            res.send('wow my database connection work');
-        })
-
+       
         // all cars API
         app.get('/cars', async (req, res) => {
             const cursor = carsCollection.find();
@@ -327,10 +321,6 @@ async function run() {
         });
 
 
-
-
-
-        // await client.db('admin').command({ ping: 1 })
         console.log("I successfully connected to MongoDB!");
     }
     finally {
